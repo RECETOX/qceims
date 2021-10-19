@@ -1,9 +1,18 @@
 #!/bin/bash
 
-d=`pwd`
+echo QCEIMS=${QCEIMS:=/storage/brno3-cerit/home/ljocha/work/QCEIMS_v.4.2}
+echo HOURS=${HOURS:=24}
+echo MEM=${MEM:=4gb}
+echo SCRATCH=${SCRATCH:=8gb}
+
+echo ORCA=${ORCA:=orca-4.2.1}
+
+
+d=$(pwd)
 bname=`basename $d`
 
-DIR=`pwd`/TMPQCEIMS
+DIR=$d/TMPQCEIMS
+echo $DIR
 if [ ! -d "$DIR" ]; then 
     echo "run mpspred first!"
     exit 
@@ -12,78 +21,53 @@ fi
 #########################################
 echo 'starting parallel qceims run on'
 
-rm -f qceims.out
 cd $DIR        
-
-for vz in *
- do
-   cd $vz 
-   rm -f ready
-#   rm -f *_*.[eo]*
-   cd ..
-   let TOTAL=TOTAL+1
-   last=$vz
- done
-
-echo TOTAL = $TOTAL directories
 
 #########################################
 # outer loop (runs until all is done)
 #########################################
 
- for vz in *
+for vz in *
  do
    cd $vz 
-VZ_NUM=`echo $vz | awk -F . '{print $2}'`
-VZ_DIR=`pwd`
-cat > ${bname}_${VZ_NUM} <<EOF
+   VZ_NUM=`echo $vz | awk -F . '{print $2}'`
+   VZ_DIR=`pwd`
+   cat > ${bname}_${VZ_NUM} <<EOF
 #!/bin/bash
 
 set -x
 echo hostname: \`hostname\`
 export OMP_NUM_THREADS=1
 
+module add $ORCA
+
 # Label for the run
-#PBS -N qceims
+#PBS -N qceims_${bname}_$VZ_NUM
 #PBS -j oe
 
-cd $VZ_DIR
-mkdir /tmp1/\$USER
-tdir=\$(mktemp -d /tmp1/\$USER/${vz}__XXXXXX)
+cd $VZ_DIR || { echo $VZ_DIR: \$!; exit 1 ; }
+tdir=\$SCRATCHDIR
 cp $VZ_DIR/* \$tdir
 cd \$tdir
 
-qceims -prod > qceims.out 2>&1 
-touch ready
+if [ ! -d "~/.XTBPARAM" ]; then
+  cp -r $QCEIMS/.XTBPARAM ~
+fi
+
+$QCEIMS/qceims -prod > qceims.out 2>&1 
+echo \$? >ready
 
 cp * $VZ_DIR
 cd $VZ_DIR
-rm -rf \$tdir
-
-if [ $vz = $last ]
-then
-     cd ..
-
-     DONE=\`ls */ready | wc -l\`
-     while [ \$DONE -ne $TOTAL ]
-     do
-       sleep 5
-       DONE=\`ls */ready | wc -l\`
-     done
-       
-     for dir in *
-     do
-       cat \$dir/qceims.res >> ../qceims.res
-       cat \$dir/qceims.out >> ../qceims.out
-     done
-fi
-
+rm -rf \$tdir/*
 
 EOF
 #  this is the job (qceims calls dscf/grad, mopac or dftb+)
 # VERY VERY IMPORTANT: termination of this job should produce
 # a file <ready> in the subdir (e.g. by 'touch ready')
-        qsub -q batch ${bname}_${VZ_NUM}
+       # qsub -l select=1:ncpus=1:mem=4gb:scratch_local=8gb -q default@meta-pbs.metacentrum.cz ${bname}_${VZ_NUM}
+        qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=$MEM:scratch_local=$SCRATCH ./${bname}_${VZ_NUM} >$VZ_DIR/jobid
+        echo qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=$MEM:scratch_local=$SCRATCH ./${bname}_${VZ_NUM} \>$VZ_DIR/jobid
 #
         echo "JOB  "${bname}_${VZ_NUM}"  STARTED"
    cd ..
