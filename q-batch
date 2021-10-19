@@ -27,11 +27,13 @@ cd $DIR
 # outer loop (runs until all is done)
 #########################################
 
-for vz in *
+for vz in TMP.*
  do
    cd $vz 
    VZ_NUM=`echo $vz | awk -F . '{print $2}'`
    VZ_DIR=`pwd`
+
+   rm -f ready jobid
    cat > ${bname}_${VZ_NUM} <<EOF
 #!/bin/bash
 
@@ -55,12 +57,13 @@ if [ ! -d "~/.XTBPARAM" ]; then
 fi
 
 $QCEIMS/qceims -prod > qceims.out 2>&1 
-echo \$? >ready
+echo \$? >ready.tmp
 
 cp * $VZ_DIR
 cd $VZ_DIR
 rm -rf \$tdir/*
 
+mv ready.tmp ready
 EOF
 #  this is the job (qceims calls dscf/grad, mopac or dftb+)
 # VERY VERY IMPORTANT: termination of this job should produce
