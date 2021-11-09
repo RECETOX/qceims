@@ -1,14 +1,22 @@
 #!/bin/bash
 
+set -- $(getopt m: "$@")
+
+while [ $1 != -- ]; do case $1 in
+	-m) MEMGB=$2; shift;;
+	esac
+	shift
+done
+
 echo QCEIMS=${QCEIMS:=/storage/brno3-cerit/home/ljocha/work/QCEIMS_v.4.2}
 echo HOURS=${HOURS:=24}
-echo MEMGB=${MEMGB:=4}
-echo SCRATCH=${SCRATCH:=8gb}
+echo MEMGB=${MEMGB:=12}
+echo SCRATCH=${SCRATCH:=20gb}
 
 echo ORCA=${ORCA:=orca-4.2.1}
-ORCA_WRAPPER=https://github.com/RECETOX/qceims/raw/main/orca_wrapper
+ORCA_WRAPPER=https://raw.githubusercontent.com/RECETOX/qceims/main/orca_wrapper
 
-MEMMB=$(($MEMBGB * 1024))
+MEMMB=$(($MEMGB * 1024))
 
 
 d=$(pwd)
@@ -59,9 +67,10 @@ if [ ! -d "~/.XTBPARAM" ]; then
   cp -r $QCEIMS/.XTBPARAM ~
 fi
 
-curl -X GET $ORCA_WRAPPER | sed 's/%MEMMB%/$MEMMB/;s/%ORCA%/$ORCA/' >orca
+curl -X GET $ORCA_WRAPPER | sed "s/%MEMMB%/$MEMMB/;s/%ORCA%/$ORCA/" >orca
 chmod +x orca
 
+PATH=.:\$PATH
 $QCEIMS/qceims -prod > qceims.out 2>&1 
 echo \$? >ready.tmp
 
@@ -78,7 +87,7 @@ EOF
         qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=${MEMGB}gb:scratch_local=$SCRATCH ./${bname}_${VZ_NUM} >$VZ_DIR/jobid
         echo qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=${MEMGB}gb:scratch_local=$SCRATCH ./${bname}_${VZ_NUM} \>$VZ_DIR/jobid
 #
-        echo "JOB  "${bname}_${VZ_NUM}"  STARTED"
+#        echo "JOB  "${bname}_${VZ_NUM}"  STARTED"
    cd ..
  done
 exit
