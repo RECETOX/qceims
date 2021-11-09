@@ -8,11 +8,11 @@ Basic wrapper scripts to run QCEIMS in Metacentrum/CERIT-SC
 3. run qceims again to prepare TMPQCEIMS/
 4. transfer TMPQCEIMS to Metacentrum storage if not already there
 5. add Orca to path (module add orca-4.2.1), and run qceims in e.g. TMPQCEIMS/TMP.1; kill it (^C) after few seconds and inspect job.last; it may complain about insufficient memory, which makes orca run extremely inefficient:
-
-    Warning (ORCA_SCF): Not enough memory available!
-                    Memory available for SCF calculation:        12288 MB
+<pre>
+     Warning (ORCA_SCF): Not enough memory available!
+     Memory available for SCF calculation:        12288 MB
                     Memory needed (estimated)           :        12307 MB
-
+</pre>
 6. add something like 20% to the estimation
 7. run "q-batch -m MEMORY_IN_GB" (substituting the required memory size) to submit the jobs
 8. run q-result periodically to check progress
