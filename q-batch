@@ -2,10 +2,13 @@
 
 echo QCEIMS=${QCEIMS:=/storage/brno3-cerit/home/ljocha/work/QCEIMS_v.4.2}
 echo HOURS=${HOURS:=24}
-echo MEM=${MEM:=4gb}
+echo MEMGB=${MEMGB:=4}
 echo SCRATCH=${SCRATCH:=8gb}
 
 echo ORCA=${ORCA:=orca-4.2.1}
+ORCA_WRAPPER=https://github.com/RECETOX/qceims/raw/main/orca_wrapper
+
+MEMMB=$(($MEMBGB * 1024))
 
 
 d=$(pwd)
@@ -41,7 +44,7 @@ set -x
 echo hostname: \`hostname\`
 export OMP_NUM_THREADS=1
 
-module add $ORCA
+# module add $ORCA
 
 # Label for the run
 #PBS -N qceims_${bname}_$VZ_NUM
@@ -56,6 +59,9 @@ if [ ! -d "~/.XTBPARAM" ]; then
   cp -r $QCEIMS/.XTBPARAM ~
 fi
 
+curl -X GET $ORCA_WRAPPER | sed 's/%MEMMB%/$MEMMB/;s/%ORCA%/$ORCA/' >orca
+chmod +x orca
+
 $QCEIMS/qceims -prod > qceims.out 2>&1 
 echo \$? >ready.tmp
 
@@ -69,8 +75,8 @@ EOF
 # VERY VERY IMPORTANT: termination of this job should produce
 # a file <ready> in the subdir (e.g. by 'touch ready')
        # qsub -l select=1:ncpus=1:mem=4gb:scratch_local=8gb -q default@meta-pbs.metacentrum.cz ${bname}_${VZ_NUM}
-        qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=$MEM:scratch_local=$SCRATCH ./${bname}_${VZ_NUM} >$VZ_DIR/jobid
-        echo qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=$MEM:scratch_local=$SCRATCH ./${bname}_${VZ_NUM} \>$VZ_DIR/jobid
+        qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=${MEMGB}gb:scratch_local=$SCRATCH ./${bname}_${VZ_NUM} >$VZ_DIR/jobid
+        echo qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=${MEMGB}gb:scratch_local=$SCRATCH ./${bname}_${VZ_NUM} \>$VZ_DIR/jobid
 #
         echo "JOB  "${bname}_${VZ_NUM}"  STARTED"
    cd ..

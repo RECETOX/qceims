@@ -1,0 +1,10 @@
+#!/bin/bash
+
+ORCA=%ORCA%
+MEMMB=%MEMMB%
+
+module add $ORCA
+sed "s/maxcore.*[0-9]*/maxcore $MEMMB/" ORCA.INPUT >ORCA.INPUT.$$
+mv ORCA.INPUT.$$ ORCA.INPUT
+
+exec orca "$@"
