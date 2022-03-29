@@ -17,3 +17,14 @@ Basic wrapper scripts to run QCXMS in Metacentrum/CERIT-SC
 7. run "q-batch -m MEMORY_IN_GB" (substituting the required memory size) to submit the jobs
 8. run q-result periodically to check progress
 9. once you feel happy (enough jobs finished successfully), the results are gathered in TMPQCXMS/qcxms.res
+
+The `q-batch` script contains a defaults section:
+<pre>
+echo QCEIMS=${QCEIMS:=/storage/brno3-cerit/home/ljocha/work/QCxMS-5.1.3}
+echo HOURS=${HOURS:=24}
+echo SCRATCH_SIZE=${SCRATCH_SIZE:=20gb}
+</pre>
+Should any of these settings be adjusted, just set the environment variables before running it,
+they will be favoured.
+
+QCxMS static binary was downloaded from the [current release](https://github.com/qcxms/QCxMS/releases/latest).
