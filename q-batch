@@ -8,12 +8,13 @@ while [ $1 != -- ]; do case $1 in
 	shift
 done
 
-echo QCEIMS=${QCEIMS:=/storage/brno3-cerit/home/ljocha/work/QCEIMS_v.4.2}
+#echo QCEIMS=${QCEIMS:=/storage/brno3-cerit/home/ljocha/work/QCEIMS_v.4.2}
+echo QCEIMS=${QCEIMS:=/storage/brno3-cerit/home/ljocha/work/QCxMS-5.1.3}
 echo HOURS=${HOURS:=24}
 echo MEMGB=${MEMGB:=12}
-echo SCRATCH=${SCRATCH:=20gb}
+echo SCRATCH_SIZE=${SCRATCH_SIZE:=20gb}
 
-echo ORCA=${ORCA:=orca-4.2.1}
+echo ORCA=${ORCA:=orca/orca-5.0.2-intel-19.0.4-byylubw}
 ORCA_WRAPPER=https://raw.githubusercontent.com/RECETOX/qceims/main/orca_wrapper
 
 MEMMB=$(($MEMGB * 1024))
@@ -22,7 +23,7 @@ MEMMB=$(($MEMGB * 1024))
 d=$(pwd)
 bname=`basename $d`
 
-DIR=$d/TMPQCEIMS
+DIR=$d/TMPQCXMS
 echo $DIR
 if [ ! -d "$DIR" ]; then 
     echo "run mpspred first!"
@@ -30,7 +31,7 @@ if [ ! -d "$DIR" ]; then
 fi
 
 #########################################
-echo 'starting parallel qceims run on'
+echo 'starting parallel qcxms run on'
 
 cd $DIR        
 
@@ -55,7 +56,7 @@ export OMP_NUM_THREADS=1
 # module add $ORCA
 
 # Label for the run
-#PBS -N qceims_${bname}_$VZ_NUM
+#PBS -N qcxms_${bname}_$VZ_NUM
 #PBS -j oe
 
 cd $VZ_DIR || { echo $VZ_DIR: \$!; exit 1 ; }
@@ -67,11 +68,11 @@ if [ ! -d "~/.XTBPARAM" ]; then
   cp -r $QCEIMS/.XTBPARAM ~
 fi
 
-curl -X GET $ORCA_WRAPPER | sed "s/%MEMMB%/$MEMMB/;s/%ORCA%/$ORCA/" >orca
+curl -X GET $ORCA_WRAPPER | sed "s/%MEMMB%/$MEMMB/;s?%ORCA%?$ORCA?" >orca
 chmod +x orca
 
 PATH=.:\$PATH
-$QCEIMS/qceims -prod > qceims.out 2>&1 
+$QCEIMS/qcxms -prod > qcxms.out 2>&1 
 echo \$? >ready.tmp
 
 cp * $VZ_DIR
@@ -80,12 +81,12 @@ rm -rf \$tdir/*
 
 mv ready.tmp ready
 EOF
-#  this is the job (qceims calls dscf/grad, mopac or dftb+)
+#  this is the job (qcxms calls dscf/grad, mopac or dftb+)
 # VERY VERY IMPORTANT: termination of this job should produce
 # a file <ready> in the subdir (e.g. by 'touch ready')
        # qsub -l select=1:ncpus=1:mem=4gb:scratch_local=8gb -q default@meta-pbs.metacentrum.cz ${bname}_${VZ_NUM}
-        qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=${MEMGB}gb:scratch_local=$SCRATCH ./${bname}_${VZ_NUM} >$VZ_DIR/jobid
-        echo qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=${MEMGB}gb:scratch_local=$SCRATCH ./${bname}_${VZ_NUM} \>$VZ_DIR/jobid
+        qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=${MEMGB}gb:scratch_local=$SCRATCH_SIZE ./${bname}_${VZ_NUM} >$VZ_DIR/jobid
+        echo qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=${MEMGB}gb:scratch_local=$SCRATCH_SIZE ./${bname}_${VZ_NUM} \>$VZ_DIR/jobid
 #
 #        echo "JOB  "${bname}_${VZ_NUM}"  STARTED"
    cd ..

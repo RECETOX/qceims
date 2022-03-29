@@ -3,7 +3,7 @@
 d=$(pwd)
 bname=`basename $d`
 
-DIR=$d/TMPQCEIMS
+DIR=$d/TMPQCXMS
 echo $DIR
 if [ ! -d "$DIR" ]; then
     echo "run mpspred first!"
@@ -20,7 +20,7 @@ done=0
 failed=0
 lost=0
 
-rm -f qceims.res
+rm -f qcxms.res
 
 for vz in TMP.*; do
    cd $vz
@@ -30,19 +30,20 @@ for vz in TMP.*; do
    if [ -f ready ]; then
      if [ "$(cat ready)" = "0" ]; then
 	done=$(($done + 1))
-	cat qceims.res >>../qceims.res
+	cat qcxms.res >>../qcxms.res
      else 
 	echo $VZ_NUM: failed with $(cat ready) >&2
         failed=$((failed + 1))
      fi
    else
      jobid=$(cat jobid)
-     if qout="$(qstat $jobid)"; then
+     if qout="$(qstat -H $jobid)"; then
         stat=$(tail -1 <<<"$qout")
         set -- $stat
-        case $5 in
+        case ${10} in
           Q) queued=$(($queued + 1)) ;;
           R) running=$(($running + 1)) ;;
+          *) lost=$(($lost + 1)) ;;
         esac
      else
        lost=$(($lost + 1))
