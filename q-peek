@@ -1,0 +1,40 @@
+#!/bin/bash
+
+d=$(pwd)
+bname=`basename $d`
+
+DIR=$d/TMPQCXMS
+echo $DIR
+if [ ! -d "$DIR" ]; then
+    echo "run mpspred first!"
+    exit
+fi
+
+cd $DIR
+
+for vz in TMP.*; do
+   cd $vz
+   VZ_NUM=`echo $vz | awk -F . '{print $2}'`
+   VZ_DIR=`pwd`
+
+   jobid=$(cat jobid)
+   if qout="$(qstat -H $jobid)"; then
+      stat=$(tail -1 <<<"$qout")
+      set -- $stat
+      case ${10} in
+        R) qstat -f $jobid >qstat.out.$$
+	   host=$(grep '^[ 	]*exec_host2' qstat.out.$$ | sed 's/^[ 	]*exec_host2 = \(.*\):.*$/\1/')
+	   scratch=$(grep '^[ 	]*SCRATCH=' qstat.out.$$ | sed 's/^[ 	]*SCRATCH=\(.*\),$/\1/')
+           rm qstat.out.$$
+	   echo $jobid: at $host:$scratch 
+	   scp $host:$scratch/* .
+	   echo
+           ;;
+        *) echo $jobid: not running \(${10}\);;
+      esac
+   else
+     lost=$(($lost + 1))
+   fi
+   cd ..
+done
+
