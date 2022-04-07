@@ -21,10 +21,9 @@ for vz in TMP.*; do
    jobid=$(cat jobid)
    if qstat -H $jobid >/tmp/qpeek$$; then
       cat /tmp/qpeek$$ >>../debug.log
-      stat=$(tail -1 /tmp/qpeek$$)
+      stat=$(tail -1 /tmp/qpeek$$ | awk '{print $10}')
       rm /tmp/qpeek$$
-      set -- $stat
-      case ${10} in
+      case $stat in
         R) qstat -f $jobid >qstat.out.$$
 	   host=$(grep '^[ 	]*exec_host2' qstat.out.$$ | sed 's/^[ 	]*exec_host2 = \(.*\):.*$/\1/')
 	   scratch=$(grep '^[ 	]*SCRATCH=' qstat.out.$$ | sed 's/^[ 	]*SCRATCH=\(.*\),$/\1/')
@@ -33,7 +32,7 @@ for vz in TMP.*; do
 	   scp $host:$scratch/* .
 	   echo
            ;;
-        *) echo $jobid: not running \(${10}\);;
+        *) echo $jobid: not running \($stat\);;
       esac
    else
      lost=$(($lost + 1))
