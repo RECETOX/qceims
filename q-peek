@@ -12,14 +12,17 @@ fi
 
 cd $DIR
 
+rm -f debug.log
 for vz in TMP.*; do
    cd $vz
    VZ_NUM=`echo $vz | awk -F . '{print $2}'`
    VZ_DIR=`pwd`
 
    jobid=$(cat jobid)
-   if qout="$(qstat -H $jobid)"; then
-      stat=$(tail -1 <<<"$qout")
+   if qstat -H $jobid >/tmp/qpeek$$; then
+      cat /tmp/qpeek$$ >>../debug.log
+      stat=$(tail -1 /tmp/qpeek$$)
+      rm /tmp/qpeek$$
       set -- $stat
       case ${10} in
         R) qstat -f $jobid >qstat.out.$$
