@@ -1,9 +1,11 @@
 #!/bin/bash
 
-set -- $(getopt m: "$@")
+set -- $(getopt fm: "$@")
 
+force=
 while [ $1 != -- ]; do case $1 in
 	-m) MEMGB=$2; shift;;
+	-f) force=yes ;; 
 	esac
 	shift
 done
@@ -34,6 +36,7 @@ fi
 echo 'starting parallel qcxms run on'
 
 cd $DIR        
+DIR=$PWD
 
 #########################################
 # outer loop (runs until all is done)
@@ -41,11 +44,23 @@ cd $DIR
 
 for vz in TMP.*
  do
-   cd $vz 
+   cd $DIR/$vz || { echo cd $DIR/$vz: $! >&2; continue; }
    VZ_NUM=`echo $vz | awk -F . '{print $2}'`
    VZ_DIR=`pwd`
 
-   rm -f ready jobid
+   [ -n "$force" ] && rm -f ready jobid
+
+   if [ -f jobid ]; then
+     jobid=$(cat jobid)
+     if qout="$(qstat -H $jobid)"; then
+        stat=$(tail -1 <<<"$qout")
+        set -- $stat
+        if [ "${10}" = R -o "${10}" = Q ]; then
+           echo $vz: $jobid still there \(${10}\), skipped >&2
+           continue
+        fi
+     fi
+   fi
    cat > ${bname}_${VZ_NUM} <<EOF
 #!/bin/bash
 
@@ -89,6 +104,5 @@ EOF
         echo qsub -l walltime=$HOURS:0:0 -l select=1:ncpus=1:mem=${MEMGB}gb:scratch_local=$SCRATCH_SIZE ./${bname}_${VZ_NUM} \>$VZ_DIR/jobid
 #
 #        echo "JOB  "${bname}_${VZ_NUM}"  STARTED"
-   cd ..
  done
 exit
