@@ -43,7 +43,9 @@ for vz in TMP.*; do
         case ${10} in
           Q) queued=$(($queued + 1)) ;;
           R) running=$(($running + 1)) ;;
-          *) lost=$(($lost + 1)) ;;
+          *) 
+		echo $VZ_NUM: lost \(${10}\) >&2
+		lost=$(($lost + 1)) ;;
         esac
      else
        lost=$(($lost + 1))
